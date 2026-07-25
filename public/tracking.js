@@ -19,7 +19,7 @@
     referrer: document.referrer || null
   };
 
-  fetch(ENDPOINT, {
+  fetch('https://intent-saas.onrender.com/?princing', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
