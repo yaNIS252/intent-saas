@@ -150,7 +150,7 @@ app.post('/api/track', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing url' });
     }
 
-    const ip = '8.8.8.8';
+    const ip = extractClientIp(req);
 
     if (isPrivateIp(ip)) {
       console.log(`[intent-saas] Private/local IP skipped: ${ip}`);
