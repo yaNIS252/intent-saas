@@ -19,12 +19,12 @@
     referrer: document.referrer || null
   };
 
-  fetch('https://intent-saas.onrender.com/?princing', {
+  fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
     keepalive: true
   }).catch(function () {
-    /* silent fail — tracking must not break the host page */
+    /* silent fail – tracking must not break the host page */
   });
 })();
