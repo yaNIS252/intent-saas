@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntentPulse — Intent Data B2B en temps réel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.6s ease-out forwards',
+            'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(24px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.15)' },
+              '50%': { boxShadow: '0 0 40px rgba(99, 102, 241, 0.35)' },
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #030712;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(139, 92, 246, 0.08), transparent),
+        radial-gradient(ellipse 50% 30% at 0% 80%, rgba(59, 130, 246, 0.06), transparent);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .feature-card {
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.1);
+    }
+
+    .btn-primary {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-ghost {
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .pricing-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .pricing-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 24px 48px rgba(99, 102, 241, 0.15);
+    }
+
+    .nav-link {
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+    }
+
+    .check-icon {
+      flex-shrink: 0;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-300 antialiased min-h-screen">
+
+  <!-- Navigation -->
+  <header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+    <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5 group">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 transition-shadow">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <span class="text-white font-semibold text-lg tracking-tight">IntentPulse</span>
+      </a>
+
+      <div class="hidden md:flex items-center gap-8 text-sm">
+        <a href="#features" class="nav-link text-slate-400">Fonctionnalités</a>
+        <a href="#tarifs" class="nav-link text-slate-400">Tarifs</a>
+        <a href="/pricing" class="nav-link text-slate-400">Pricing</a>
+        <a href="/contact" class="nav-link text-slate-400">Contact</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="/demo" class="hidden sm:inline-flex btn-ghost text-sm font-medium text-slate-300 px-4 py-2 rounded-lg border border-white/10">
+          Voir la démo
+        </a>
+        <a href="/pricing#start" class="btn-primary inline-flex text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500">
+          Essai gratuit
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+    <div class="hero-glow"></div>
+    <div class="max-w-4xl mx-auto text-center relative">
+      <div class="animate-fade-up inline-flex items-center gap-2 glass px-4 py-1.5 rounded-full text-xs font-medium text-indigo-300 mb-8 border border-indigo-500/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        B2B Intent Intelligence
+      </div>
+
+      <h1 class="animate-fade-up text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6" style="animation-delay: 0.1s;">
+        Sachez exactement quelles entreprises visitent votre site
+        <span class="bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400 bg-clip-text text-transparent">
+          avant même qu'elles ne vous contactent
+        </span>
+      </h1>
+
+      <p class="animate-fade-up text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed" style="animation-delay: 0.2s;">
+        IntentPulse identifie les visiteurs professionnels en temps réel, filtre le bruit des FAI résidentiels et vous alerte sur Slack dès qu'une entreprise consulte vos pages stratégiques.
+      </p>
+
+      <div class="animate-fade-up flex flex-col sm:flex-row items-center justify-center gap-4" style="animation-delay: 0.3s;">
+        <a href="/pricing#start" class="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25">
+          Démarrer l'essai gratuit
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </a>
+        <a href="/demo" class="btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-base">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Demander une démo
+        </a>
+      </div>
+
+      <p class="animate-fade-up mt-6 text-sm text-slate-500" style="animation-delay: 0.4s;">
+        Installation en 2 minutes · Sans carte bancaire · Script JS ultra-léger
+      </p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+          De la visite anonyme à l'alerte actionnable
+        </h2>
+        <p class="text-slate-400 max-w-xl mx-auto">
+          Un pipeline complet pour transformer le trafic web en signaux commerciaux qualifiés.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="feature-card glass rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white mb-3">Reverse-IP en temps réel</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Chaque visite est résolue via IPinfo.io pour révéler l'organisation derrière l'adresse IP — nom de l'entreprise, localisation et ASN.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card glass rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white mb-3">Filtre FAI anti-bruit</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Orange, SFR, Free, Comcast, Verizon… Les connexions résidentielles sont automatiquement exclues pour ne garder que le trafic B2B pertinent.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card glass rounded-2xl p-8">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white mb-3">Alertes Slack instantanées</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Dès qu'une entreprise consulte /pricing, /tarifs, /demo ou /contact, votre équipe commerciale reçoit une notification formatée sur Slack.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="tarifs" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="inline-block text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Tarifs transparents</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+          Un plan. Tout inclus.
+        </h2>
+        <p class="text-slate-400 max-w-lg mx-auto">
+          Pas de tiers compliqués. Commencez à détecter l'intention d'achat dès aujourd'hui.
+        </p>
+      </div>
+
+      <div class="max-w-md mx-auto">
+        <div id="start" class="pricing-card glass-strong rounded-2xl p-8 sm:p-10 relative overflow-hidden animate-pulse-glow">
+          <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-xl font-bold text-white">Pro Intent</h3>
+              <p class="text-sm text-slate-400 mt-0.5">Pour les équipes sales & marketing</p>
+            </div>
+            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+              Populaire
+            </span>
+          </div>
+
+          <div class="mb-8">
+            <div class="flex items-end gap-1">
+              <span class="text-5xl font-extrabold text-white tracking-tight">49€</span>
+              <span class="text-slate-400 mb-2 text-sm">/ mois</span>
+            </div>
+            <p class="text-sm text-slate-500 mt-2">Facturation mensuelle · Résiliable à tout moment</p>
+          </div>
+
+          <ul class="space-y-3.5 mb-8">
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Visiteurs entreprise identifiés en temps réel
+            </li>
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Filtrage automatique des FAI résidentiels
+            </li>
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Alertes Slack sur pages stratégiques
+            </li>
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Script JS vanilla — installation en 1 ligne
+            </li>
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Support email prioritaire
+            </li>
+            <li class="flex items-start gap-3 text-sm text-slate-300">
+              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              14 jours d'essai gratuit
+            </li>
+          </ul>
+
+          <a href="/pricing/signup" class="btn-primary block w-full text-center px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25 mb-3">
+            Démarrer l'essai gratuit
+          </a>
+          <a href="/contact" class="btn-ghost block w-full text-center px-6 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-medium">
+            Demander une démo personnalisée
+          </a>
+        </div>
+      </div>
+
+      <p class="text-center text-sm text-slate-500 mt-8">
+        Besoin d'un plan entreprise ?
+        <a href="/contact" class="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2">Contactez-nous</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="py-16 px-6">
+    <div class="max-w-4xl mx-auto glass-strong rounded-2xl p-10 sm:p-14 text-center relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-violet-500/5 pointer-events-none"></div>
+      <div class="relative">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">
+          Prêt à capter l'intention avant vos concurrents ?
+        </h2>
+        <p class="text-slate-400 mb-8 max-w-lg mx-auto">
+          Installez IntentPulse sur votre site en moins de 2 minutes et recevez votre première alerte Slack dès la prochaine visite entreprise.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="/tarifs" class="btn-primary inline-flex px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">
+            Voir les tarifs
+          </a>
+          <a href="/demo" class="btn-ghost inline-flex px-8 py-3 rounded-xl border border-white/10 text-slate-300 font-medium">
+            Planifier une démo
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-12 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <span class="text-white font-semibold">IntentPulse</span>
+          <span class="text-slate-600 text-sm">· Intent Data B2B</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+          <a href="/pricing" class="nav-link hover:text-slate-300">Pricing</a>
+          <a href="/tarifs" class="nav-link hover:text-slate-300">Tarifs</a>
+          <a href="/demo" class="nav-link hover:text-slate-300">Démo</a>
+          <a href="/contact" class="nav-link hover:text-slate-300">Contact</a>
+        </div>
+
+        <p class="text-xs text-slate-600">
+          © 2026 IntentPulse. Tous droits réservés.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/tracking.js"></script>
+</body>
+</html>
