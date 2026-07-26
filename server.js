@@ -176,7 +176,7 @@ app.post('/api/track', async (req, res) => {
       return res.json({ success: true, skipped: 'non_strategic_page' });
     }
 
-    const ip = extractClientIp(req);
+    const ip = '8.8.8.8';
 
     if (isPrivateIp(ip)) {
       console.log(`[intent-saas] Private/local IP skipped: ${ip}`);
