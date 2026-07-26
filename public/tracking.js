@@ -1,19 +1,21 @@
 (function () {
   'use strict';
 
-  // Ensemble (Set) pour mémoriser les URLs déjà envoyées durant cette session
-  // Évite de spamer Slack si l'utilisateur va et vient sur #tarif
   var trackedUrls = new Set();
+  var pendingUrls = new Set(); // Verrou immédiat pour éviter les doublons simultanés
 
   function triggerTracking() {
     var currentUrl = window.location.href;
 
-    // Si cette URL exacte (#tarif) a déjà été validée dans cette session, on s'arrête
-    if (trackedUrls.has(currentUrl)) {
+    // Si l'URL a déjà été notifiée OU est en cours d'envoi, on bloque immédiatement
+    if (trackedUrls.has(currentUrl) || pendingUrls.has(currentUrl)) {
       return;
     }
 
-    // Détection automatique du domaine de ton API Render
+    // VERROU : On marque l'URL comme "en cours" AVANT le fetch
+    pendingUrls.add(currentUrl);
+
+    // Détection automatique du domaine de l'API Render
     var ENDPOINT = (function () {
       var script = document.currentScript || document.querySelector('script[src*="tracking.js"]');
       if (script && script.src) {
@@ -21,7 +23,7 @@
           var origin = new URL(script.src).origin;
           return origin + '/api/track';
         } catch (e) {
-          /* fallback below */
+          /* fallback */
         }
       }
       return '/api/track';
@@ -42,22 +44,24 @@
       return response.json();
     })
     .then(function(data) {
-      // Si le serveur a accepté l'URL et envoyé la notif, on la stocke dans notre Set
+      // Si l'alerte a bien été envoyée sur Slack, on la mémorise définitivement
       if (data.success && !data.skipped) {
         trackedUrls.add(currentUrl);
       }
     })
     .catch(function () {
-      /* silent fail – ne doit jamais faire crasher le site hôte */
+      /* silent fail */
+    })
+    .finally(function() {
+      // Déverrouillage de la requête en cours
+      pendingUrls.delete(currentUrl);
     });
   }
 
-  // 1. Exécution au chargement initial de la page
+  // 1. Exécution au chargement initial
   triggerTracking();
 
-  // 2. Écoute les changements d'ancre dans l'URL (#tarif, #contact, etc.)
+  // 2. Écoute des changements d'ancres (#tarif) et de routes SPA
   window.addEventListener('hashchange', triggerTracking);
-
-  // 3. Écoute les changements d'URL via l'API History (Webflow, React, Next.js)
   window.addEventListener('popstate', triggerTracking);
 })();
