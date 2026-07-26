@@ -4,24 +4,22 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const HIGH_INTENT_KEYWORDS = [
-  'pricing',
-  'tarifs',
-  'tarif',
-  'devis',
-  'contact',
-  'demo',
-  'offres',
-  'offre',
-  'checkout',
-  'subscribe',
-  'plan'
-];
+// 1. Initialisation du client Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
+if (!supabaseUrl || !supabaseKey) {
+  console.error('[intent-saas] Erreur : SUPABASE_URL ou SUPABASE_KEY manquant dans le .env');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Patterns Regex pour filtrer les FAI résidentiels
 const ISP_PATTERNS = [
   /orange/i,
   /sfr/i,
@@ -67,10 +65,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-function isHighIntentPage(url) {
+/**
+ * Analyse si l'URL contient un des mots-clés configurés par LE CLIENT
+ */
+function isHighIntentPage(url, keywords) {
   if (!url || typeof url !== 'string') return false;
+  if (!keywords || !Array.isArray(keywords)) return false;
+  
   const lower = url.toLowerCase();
-  return HIGH_INTENT_KEYWORDS.some((keyword) => lower.includes(keyword));
+  return keywords.some((keyword) => lower.includes(keyword.toLowerCase()));
 }
 
 function extractClientIp(req) {
@@ -137,23 +140,23 @@ async function lookupIpInfo(ip) {
   return response.data;
 }
 
-async function sendSlackAlert({ company, location, page, referrer, timestamp, siteId }) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+/**
+ * Envoie l'alerte sur le Webhook Slack spécifique du client
+ */
+async function sendSlackAlert({ company, location, page, referrer, timestamp, clientName, webhookUrl }) {
   if (!webhookUrl) {
-    console.warn('[intent-saas] SLACK_WEBHOOK_URL is not configured — alert skipped');
+    console.warn('[intent-saas] Webhook Slack non configuré pour ce client — alerte ignorée');
     return;
   }
 
-  const siteLine = siteId ? `\n🆔 *Site :* ${siteId}` : '';
-
   const text = [
-    '🚨 *Visite entreprise à haute intention détectée*',
+    `🚨 *Visite entreprise détectée pour : ${clientName}*`,
     '',
     `🏢 *Entreprise :* ${company}`,
     `📍 *Localisation :* ${location}`,
     `📄 *Page visitée :* ${page}`,
     `🔗 *Referrer :* ${referrer || 'Direct'}`,
-    `⏰ *Horodatage :* ${timestamp}${siteLine}`
+    `⏰ *Horodatage :* ${timestamp}`
   ].join('\n');
 
   await axios.post(
@@ -163,6 +166,7 @@ async function sendSlackAlert({ company, location, page, referrer, timestamp, si
   );
 }
 
+// ROUTE PRINCIPALE
 app.post('/api/track', async (req, res) => {
   try {
     const { url, referrer, siteId } = req.body || {};
@@ -171,18 +175,38 @@ app.post('/api/track', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing url' });
     }
 
-    if (!isHighIntentPage(url)) {
-      console.log(`[intent-saas] Non-strategic page: ${url}`);
+    // 1. Récupération du site_id (fallback vers notre client de test 'cli_test_123')
+    const targetSiteId = siteId || 'cli_test_123';
+
+    // 2. Requête Supabase pour récupérer le profil du client
+    const { data: client, error: dbError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('site_id', targetSiteId)
+      .single();
+
+    if (dbError || !client) {
+      console.warn(`[intent-saas] Client introuvable pour site_id : ${targetSiteId}`);
+      return res.status(404).json({ success: false, error: 'Client not found' });
+    }
+
+    // 3. Vérification des mots-clés stratégiques PROPRES AU CLIENT
+    if (!isHighIntentPage(url, client.intent_keywords)) {
+      console.log(`[intent-saas] Non-strategic page for ${client.name}: ${url}`);
       return res.json({ success: true, skipped: 'non_strategic_page' });
     }
 
-    const ip = '8.8.8.8';
+    // 4. Détection/Simulation de l'IP
+    // ⚠️ Pour tester en local, laisse '8.8.8.8'. En production, utilise extractClientIp(req).
+    const ip = '8.8.8.8'; 
+    // const ip = extractClientIp(req);
 
     if (isPrivateIp(ip)) {
       console.log(`[intent-saas] Private/local IP skipped: ${ip}`);
       return res.json({ success: true, skipped: 'private_ip' });
     }
 
+    // 5. Lookup IPinfo
     let ipInfo;
     try {
       ipInfo = await lookupIpInfo(ip);
@@ -195,6 +219,7 @@ app.post('/api/track', async (req, res) => {
       return res.json({ success: true, skipped: 'ip_lookup_failed' });
     }
 
+    // 6. Filtrage FAI / Résidentiel
     const orgString = getOrgString(ipInfo);
 
     if (isResidentialIsp(orgString)) {
@@ -202,6 +227,7 @@ app.post('/api/track', async (req, res) => {
       return res.json({ success: true, skipped: 'residential_isp' });
     }
 
+    // 7. Formatage et envoi de la notification
     const company = resolveCompanyName(ipInfo);
     const location = [ipInfo.city, ipInfo.country].filter(Boolean).join(', ') || 'Inconnue';
     const timestamp = formatTimestamp(new Date());
@@ -212,11 +238,13 @@ app.post('/api/track', async (req, res) => {
       page: url,
       referrer,
       timestamp,
-      siteId
+      clientName: client.name,
+      webhookUrl: client.slack_webhook_url // URL dynamique depuis Supabase
     });
 
-    console.log(`[intent-saas] Slack alert sent — ${company} on ${url}${siteId ? ` (site: ${siteId})` : ''}`);
+    console.log(`[intent-saas] Slack alert sent for client "${client.name}" — ${company} on ${url}`);
     return res.json({ success: true, alerted: true });
+
   } catch (err) {
     console.error('[intent-saas] /api/track error:', err.message);
     return res.status(500).json({ success: false, error: 'Internal server error' });
