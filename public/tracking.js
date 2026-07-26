@@ -1,8 +1,9 @@
 (function () {
   'use strict';
 
+  var script = document.currentScript;
+
   var ENDPOINT = (function () {
-    var script = document.currentScript;
     if (script && script.src) {
       try {
         var origin = new URL(script.src).origin;
@@ -14,10 +15,16 @@
     return '/api/track';
   })();
 
+  var siteId = script ? script.getAttribute('data-site-id') : null;
+
   var payload = {
     url: window.location.href,
     referrer: document.referrer || null
   };
+
+  if (siteId) {
+    payload.siteId = siteId;
+  }
 
   fetch(ENDPOINT, {
     method: 'POST',
@@ -25,6 +32,6 @@
     body: JSON.stringify(payload),
     keepalive: true
   }).catch(function () {
-    /* silent fail – tracking must not break the host page */
+    /* silent fail — tracking must not break the host page */
   });
 })();

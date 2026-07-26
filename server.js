@@ -8,7 +8,19 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const STRATEGIC_KEYWORDS = ['pricing', 'tarifs', 'demo', 'contact'];
+const HIGH_INTENT_KEYWORDS = [
+  'pricing',
+  'tarifs',
+  'tarif',
+  'devis',
+  'contact',
+  'demo',
+  'offres',
+  'offre',
+  'checkout',
+  'subscribe',
+  'plan'
+];
 
 const ISP_PATTERNS = [
   /orange/i,
@@ -20,6 +32,7 @@ const ISP_PATTERNS = [
   /at\s*&?\s*t/i,
   /t-mobile/i,
   /vodafone/i,
+  /telia/i,
   /deutsche\s*telekom/i,
   /telefonica/i,
   /virgin\s*media/i,
@@ -49,9 +62,16 @@ const ISP_PATTERNS = [
   /isp\b/i
 ];
 
+app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+function isHighIntentPage(url) {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  return HIGH_INTENT_KEYWORDS.some((keyword) => lower.includes(keyword));
+}
 
 function extractClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
@@ -77,8 +97,14 @@ function isPrivateIp(ip) {
   return false;
 }
 
+function resolveCompanyName(ipInfo) {
+  if (ipInfo.company?.name) return ipInfo.company.name;
+  if (ipInfo.org) return ipInfo.org.replace(/^AS\d+\s+/i, '').trim() || ipInfo.org;
+  return 'Entreprise inconnue';
+}
+
 function getOrgString(ipInfo) {
-  return [ipInfo.org, ipInfo.company, ipInfo.asn?.name]
+  return [ipInfo.org, ipInfo.company?.name, ipInfo.asn?.name]
     .filter(Boolean)
     .join(' ');
 }
@@ -86,12 +112,6 @@ function getOrgString(ipInfo) {
 function isResidentialIsp(orgString) {
   if (!orgString) return true;
   return ISP_PATTERNS.some((pattern) => pattern.test(orgString));
-}
-
-function isStrategicPage(url) {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  return STRATEGIC_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
 function formatTimestamp(date) {
@@ -105,7 +125,8 @@ function formatTimestamp(date) {
 async function lookupIpInfo(ip) {
   const token = process.env.IPINFO_TOKEN;
   if (!token) {
-    throw new Error('IPINFO_TOKEN is not configured');
+    console.error('[intent-saas] IPINFO_TOKEN is not configured');
+    return null;
   }
 
   const response = await axios.get(`https://ipinfo.io/${ip}`, {
@@ -116,23 +137,23 @@ async function lookupIpInfo(ip) {
   return response.data;
 }
 
-async function sendSlackAlert({ company, page, city, country, timestamp, referrer }) {
+async function sendSlackAlert({ company, location, page, referrer, timestamp, siteId }) {
   const webhookUrl = process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) {
     console.warn('[intent-saas] SLACK_WEBHOOK_URL is not configured — alert skipped');
     return;
   }
 
-  const location = [city, country].filter(Boolean).join(', ') || 'Inconnu';
-  const referrerLine = referrer ? `\n🔗 *Referrer :* ${referrer}` : '';
+  const siteLine = siteId ? `\n🆔 *Site :* ${siteId}` : '';
 
   const text = [
-    '🚨 *Visite entreprise détectée*',
+    '🚨 *Visite entreprise à haute intention détectée*',
     '',
     `🏢 *Entreprise :* ${company}`,
-    `📍 *Page :* ${page}`,
-    `🌐 *Localisation :* ${location}`,
-    `⏰ *Horodatage :* ${timestamp}${referrerLine}`
+    `📍 *Localisation :* ${location}`,
+    `📄 *Page visitée :* ${page}`,
+    `🔗 *Referrer :* ${referrer || 'Direct'}`,
+    `⏰ *Horodatage :* ${timestamp}${siteLine}`
   ].join('\n');
 
   await axios.post(
@@ -144,10 +165,15 @@ async function sendSlackAlert({ company, page, city, country, timestamp, referre
 
 app.post('/api/track', async (req, res) => {
   try {
-    const { url, referrer } = req.body || {};
+    const { url, referrer, siteId } = req.body || {};
 
     if (!url) {
       return res.status(400).json({ success: false, error: 'Missing url' });
+    }
+
+    if (!isHighIntentPage(url)) {
+      console.log(`[intent-saas] Non-strategic page: ${url}`);
+      return res.json({ success: true, skipped: 'non_strategic_page' });
     }
 
     const ip = extractClientIp(req);
@@ -165,6 +191,10 @@ app.post('/api/track', async (req, res) => {
       return res.json({ success: true, skipped: 'ip_lookup_failed' });
     }
 
+    if (!ipInfo) {
+      return res.json({ success: true, skipped: 'ip_lookup_failed' });
+    }
+
     const orgString = getOrgString(ipInfo);
 
     if (isResidentialIsp(orgString)) {
@@ -172,26 +202,20 @@ app.post('/api/track', async (req, res) => {
       return res.json({ success: true, skipped: 'residential_isp' });
     }
 
-    if (!isStrategicPage(url)) {
-      console.log(`[intent-saas] Non-strategic page: ${url}`);
-      return res.json({ success: true, skipped: 'non_strategic_page' });
-    }
-
-    const company = orgString || ipInfo.org || 'Entreprise inconnue';
-    const city = ipInfo.city || null;
-    const country = ipInfo.country || null;
+    const company = resolveCompanyName(ipInfo);
+    const location = [ipInfo.city, ipInfo.country].filter(Boolean).join(', ') || 'Inconnue';
     const timestamp = formatTimestamp(new Date());
 
     await sendSlackAlert({
       company,
+      location,
       page: url,
-      city,
-      country,
+      referrer,
       timestamp,
-      referrer
+      siteId
     });
 
-    console.log(`[intent-saas] Slack alert sent for ${company} on ${url}`);
+    console.log(`[intent-saas] Slack alert sent — ${company} on ${url}${siteId ? ` (site: ${siteId})` : ''}`);
     return res.json({ success: true, alerted: true });
   } catch (err) {
     console.error('[intent-saas] /api/track error:', err.message);
