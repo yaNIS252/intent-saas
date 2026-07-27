@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IntentPulse — Intent Data B2B en temps réel</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -136,19 +137,12 @@
         <span class="text-white font-semibold text-lg tracking-tight">IntentPulse</span>
       </a>
 
-      <div class="hidden md:flex items-center gap-8 text-sm">
-        <a href="#features" class="nav-link text-slate-400">Fonctionnalités</a>
-        <a href="#tarifs" class="nav-link text-slate-400">Tarifs</a>
-        <a href="/pricing" class="nav-link text-slate-400">Pricing</a>
-        <a href="/contact" class="nav-link text-slate-400">Contact</a>
-      </div>
-
       <div class="flex items-center gap-3">
-        <a href="/demo" class="hidden sm:inline-flex btn-ghost text-sm font-medium text-slate-300 px-4 py-2 rounded-lg border border-white/10">
-          Voir la démo
-        </a>
-        <a href="/pricing#start" class="btn-primary inline-flex text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500">
-          Essai gratuit
+        <button onclick="openBookingModal()" class="btn-ghost inline-flex text-sm font-medium text-slate-300 border border-white/10 px-3.5 py-2 rounded-lg hover:border-white/20">
+          📅 Prendre rendez-vous
+        </button>
+        <a id="navAuthBtn" href="/login.html?mode=login" class="btn-primary inline-flex text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500">
+          Déjà client ?
         </a>
       </div>
     </nav>
@@ -175,19 +169,18 @@
       </p>
 
       <div class="animate-fade-up flex flex-col sm:flex-row items-center justify-center gap-4" style="animation-delay: 0.3s;">
-        <a href="/pricing#start" class="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25">
+        <a href="/login.html?mode=signup" class="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25">
           Démarrer l'essai gratuit
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
           </svg>
         </a>
-        <a href="/demo" class="btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-base">
+        <button onclick="openBookingModal()" class="btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-base">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
-          Demander une démo
-        </a>
+          Prendre rendez-vous
+        </button>
       </div>
 
       <p class="animate-fade-up mt-6 text-sm text-slate-500" style="animation-delay: 0.4s;">
@@ -209,7 +202,6 @@
       </div>
 
       <div class="grid md:grid-cols-3 gap-6">
-        <!-- Feature 1 -->
         <div class="feature-card glass rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
             <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,11 +214,10 @@
           </p>
         </div>
 
-        <!-- Feature 2 -->
         <div class="feature-card glass rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-6">
             <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 00-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
             </svg>
           </div>
           <h3 class="text-lg font-semibold text-white mb-3">Filtre FAI anti-bruit</h3>
@@ -235,7 +226,6 @@
           </p>
         </div>
 
-        <!-- Feature 3 -->
         <div class="feature-card glass rounded-2xl p-8">
           <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
             <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,16 +246,12 @@
     <div class="max-w-6xl mx-auto">
       <div class="text-center mb-14">
         <span class="inline-block text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Tarifs transparents</span>
-        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
-          Un plan. Tout inclus.
-        </h2>
-        <p class="text-slate-400 max-w-lg mx-auto">
-          Pas de tiers compliqués. Commencez à détecter l'intention d'achat dès aujourd'hui.
-        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Un plan. Tout inclus.</h2>
+        <p class="text-slate-400 max-w-lg mx-auto">Commencez à détecter l'intention d'achat dès aujourd'hui.</p>
       </div>
 
       <div class="max-w-md mx-auto">
-        <div id="start" class="pricing-card glass-strong rounded-2xl p-8 sm:p-10 relative overflow-hidden animate-pulse-glow">
+        <div class="pricing-card glass-strong rounded-2xl p-8 sm:p-10 relative overflow-hidden animate-pulse-glow">
           <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
 
           <div class="flex items-center justify-between mb-6">
@@ -273,9 +259,7 @@
               <h3 class="text-xl font-bold text-white">Pro Intent</h3>
               <p class="text-sm text-slate-400 mt-0.5">Pour les équipes sales & marketing</p>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
-              Populaire
-            </span>
+            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">Populaire</span>
           </div>
 
           <div class="mb-8">
@@ -315,50 +299,34 @@
               <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
-              Support email prioritaire
-            </li>
-            <li class="flex items-start gap-3 text-sm text-slate-300">
-              <svg class="check-icon w-5 h-5 text-emerald-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
               14 jours d'essai gratuit
             </li>
           </ul>
 
-          <a href="/pricing/signup" class="btn-primary block w-full text-center px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25 mb-3">
+          <a href="/login.html?mode=signup" class="btn-primary block w-full text-center px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25 mb-3">
             Démarrer l'essai gratuit
           </a>
-          <a href="/contact" class="btn-ghost block w-full text-center px-6 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-medium">
-            Demander une démo personnalisée
-          </a>
+          <button onclick="openBookingModal()" class="btn-ghost block w-full text-center px-6 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-medium hover:text-white">
+            Demander une démo
+          </button>
         </div>
       </div>
-
-      <p class="text-center text-sm text-slate-500 mt-8">
-        Besoin d'un plan entreprise ?
-        <a href="/contact" class="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2">Contactez-nous</a>
-      </p>
     </div>
   </section>
 
   <!-- CTA Banner -->
   <section class="py-16 px-6">
     <div class="max-w-4xl mx-auto glass-strong rounded-2xl p-10 sm:p-14 text-center relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-violet-500/5 pointer-events-none"></div>
       <div class="relative">
-        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">
-          Prêt à capter l'intention avant vos concurrents ?
-        </h2>
-        <p class="text-slate-400 mb-8 max-w-lg mx-auto">
-          Installez IntentPulse sur votre site en moins de 2 minutes et recevez votre première alerte Slack dès la prochaine visite entreprise.
-        </p>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">Prêt à capter l'intention avant vos concurrents ?</h2>
+        <p class="text-slate-400 mb-8 max-w-lg mx-auto">Installez IntentPulse sur votre site en moins de 2 minutes.</p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="/tarifs" class="btn-primary inline-flex px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">
-            Voir les tarifs
+          <a href="/login.html?mode=signup" class="btn-primary inline-flex px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">
+            S'inscrire maintenant
           </a>
-          <a href="/demo" class="btn-ghost inline-flex px-8 py-3 rounded-xl border border-white/10 text-slate-300 font-medium">
-            Planifier une démo
-          </a>
+          <button onclick="openBookingModal()" class="btn-ghost inline-flex px-8 py-3 rounded-xl border border-white/10 text-slate-300 font-medium">
+            Prendre rendez-vous
+          </button>
         </div>
       </div>
     </div>
@@ -366,32 +334,77 @@
 
   <!-- Footer -->
   <footer class="border-t border-white/5 py-12 px-6">
-    <div class="max-w-6xl mx-auto">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-2.5">
-          <div class="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          <span class="text-white font-semibold">IntentPulse</span>
-          <span class="text-slate-600 text-sm">· Intent Data B2B</span>
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
         </div>
-
-        <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
-          <a href="/pricing" class="nav-link hover:text-slate-300">Pricing</a>
-          <a href="/tarifs" class="nav-link hover:text-slate-300">Tarifs</a>
-          <a href="/demo" class="nav-link hover:text-slate-300">Démo</a>
-          <a href="/contact" class="nav-link hover:text-slate-300">Contact</a>
-        </div>
-
-        <p class="text-xs text-slate-600">
-          © 2026 IntentPulse. Tous droits réservés.
-        </p>
+        <span class="text-white font-semibold">IntentPulse</span>
       </div>
+      <p class="text-xs text-slate-600">© 2026 IntentPulse. Tous droits réservés.</p>
     </div>
   </footer>
 
-  <script src="/tracking.js" data-site-id="intentpulse-demo"></script>
+  <!-- MODALE PRENDRE RENDEZ-VOUS -->
+  <div id="bookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+      <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+        ✕
+      </button>
+      <h3 class="text-xl font-bold text-white mb-2">Réserver une démonstration</h3>
+      <p class="text-sm text-gray-400 mb-6">Choisissez un créneau avec notre équipe pour configurer IntentPulse en direct.</p>
+      
+      <form onsubmit="handleBookingSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Votre Nom & Prénom</label>
+          <input type="text" required placeholder="Alex Martin" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Email professionnel</label>
+          <input type="email" required placeholder="alex@entreprise.com" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Date souhaitée</label>
+          <input type="date" required class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
+        </div>
+        <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition text-sm">
+          Confirmer le rendez-vous
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://vudtgpdsufkqpssgnqdr.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZHRncGRzdWZrcXBzc2ducWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNzYzODcsImV4cCI6MjEwMDY1MjM4N30.1Mdv6fx3JNZHoiXzgc4jH80_yxWwUkvW86k7xT9Ace0";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Si déjà connecté, ajuster le bouton en haut
+    async function checkSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        const btn = document.getElementById('navAuthBtn');
+        if (btn) {
+          btn.textContent = 'Mon Dashboard';
+          btn.href = '/dashboard.html';
+        }
+      }
+    }
+    checkSession();
+
+    function openBookingModal() {
+      document.getElementById('bookingModal').classList.remove('hidden');
+    }
+    function closeBookingModal() {
+      document.getElementById('bookingModal').classList.add('hidden');
+    }
+    function handleBookingSubmit(e) {
+      e.preventDefault();
+      alert("Demande enregistrée ! Un conseiller vous contactera dans les plus brefs délais.");
+      closeBookingModal();
+    }
+  </script>
 </body>
 </html>
