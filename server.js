@@ -254,7 +254,11 @@ app.post('/api/track', async (req, res) => {
 
     // 4. Détection/Simulation de l'IP
     // ⚠️ Pour tester en local, laisse '8.8.8.8'. En production, utilise extractClientIp(req).
-    const ip = '8.8.8.8'; 
+    // 4. Détection de l'IP (Dynamique : '8.8.8.8' en dev local, vraie IP en prod)
+    const isDev = process.env.NODE_ENV !== 'production';
+    const ip = isDev ? '8.8.8.8' : extractClientIp(req);
+
+console.log(`[intent-saas] IP détectée (${isDev ? 'DEV' : 'PROD'}) : ${ip}`);
     // const ip = extractClientIp(req);
 
     if (isPrivateIp(ip)) {
