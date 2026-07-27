@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Client — Intent SaaS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6">
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center bg-gray-800 p-6 rounded-xl border border-gray-700">
+      <div>
+        <h1 class="text-2xl font-bold">Espace Configuration Client</h1>
+        <p class="text-gray-400 text-sm" id="userEmail">Chargement...</p>
+      </div>
+      <button id="btnLogout" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-sm font-medium rounded-lg transition">
+        Déconnexion
+      </button>
+    </div>
+
+    <!-- Message de notification -->
+    <div id="statusMessage" class="hidden p-4 rounded-lg text-sm"></div>
+
+    <!-- Formulaire de configuration du site -->
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-4">
+      <h2 class="text-xl font-semibold border-b border-gray-700 pb-3">1. Vos paramètres d'alerte</h2>
+      
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Nom du projet / Entreprise</label>
+        <input type="text" id="clientName" placeholder="Ex: Mon Agence B2B"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">URL Webhook Slack</label>
+        <input type="url" id="webhookUrl" placeholder="https://hooks.slack.com/services/..."
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Mots-clés de suivi (séparés par des virgules)</label>
+        <input type="text" id="keywords" placeholder="pricing, tarifs, devis, contact, demo"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+        <p class="text-xs text-gray-400 mt-1">L'alerte Slack se déclenchera uniquement si l'URL visitée contient l'un de ces mots.</p>
+      </div>
+
+      <button id="btnSave" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 font-medium rounded-lg transition">
+        Enregistrer les modifications
+      </button>
+    </div>
+
+    <!-- Script de tracking à intégrer -->
+    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-4">
+      <h2 class="text-xl font-semibold border-b border-gray-700 pb-3">2. Code d'intégration Web</h2>
+      <p class="text-sm text-gray-300">Copiez et collez ce script dans la balise `<head>` de votre site web :</p>
+      
+      <div class="relative bg-gray-950 p-4 rounded-lg font-mono text-sm text-green-400 border border-gray-800 overflow-x-auto">
+        <pre id="scriptSnippet">// Enregistrez vos paramètres pour générer votre script personnalisé...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ⚠️ TES CLÉS SUPABASE
+  const SUPABASE_URL = "https://vudtgpdsufkqpssgnqdr.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZHRncGRzdWZrcXBzc2ducWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNzYzODcsImV4cCI6MjEwMDY1MjM4N30.1Mdv6fx3JNZHoiXzgc4jH80_yxWwUkvW86k7xT9Ace0";
+
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentUserId = null;
+  let currentSiteId = null;
+
+  function showStatus(text, isError = false) {
+    const msg = document.getElementById('statusMessage');
+    msg.textContent = text;
+    msg.className = `p-4 rounded-lg text-sm ${isError ? 'bg-red-900/50 text-red-300 border border-red-800' : 'bg-green-900/50 text-green-300 border border-green-800'}`;
+    msg.classList.remove('hidden');
+  }
+
+  // Écouteur d'état de session sécurisé
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    if (!session) {
+      window.location.href = "/login.html";
+      return;
+    }
+
+    currentUserId = session.user.id;
+    document.getElementById('userEmail').textContent = session.user.email;
+
+    // Charger les données du client
+    const { data: client } = await supabaseClient
+      .from('clients')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .maybeSingle();
+
+    if (client) {
+      currentSiteId = client.site_id;
+      document.getElementById('clientName').value = client.name || '';
+      document.getElementById('webhookUrl').value = client.slack_webhook_url || '';
+      document.getElementById('keywords').value = (client.intent_keywords || []).join(', ');
+      updateSnippet(client.site_id);
+    }
+  });
+
+  function updateSnippet(siteId) {
+    const host = window.location.origin;
+    const code = `<script src="${host}/tracker.js" data-site-id="${siteId}" async><\/script>`;
+    document.getElementById('scriptSnippet').textContent = code;
+  }
+
+  // Enregistrement
+  document.getElementById('btnSave').addEventListener('click', async () => {
+    const name = document.getElementById('clientName').value.trim();
+    const webhookUrl = document.getElementById('webhookUrl').value.trim();
+    const rawKeywords = document.getElementById('keywords').value;
+
+    if (!name || !webhookUrl) {
+      return showStatus("Veuillez remplir le nom et le Webhook Slack.", true);
+    }
+
+    const keywords = rawKeywords.split(',').map(k => k.trim()).filter(Boolean);
+
+    if (!currentSiteId) {
+      currentSiteId = 'cli_' + Math.random().toString(36).substring(2, 9);
+    }
+
+    const payload = {
+      user_id: currentUserId,
+      site_id: currentSiteId,
+      name: name,
+      slack_webhook_url: webhookUrl,
+      intent_keywords: keywords
+    };
+
+    const { error } = await supabaseClient
+      .from('clients')
+      .upsert(payload, { onConflict: 'site_id' });
+
+    if (error) {
+      showStatus("Erreur d'enregistrement : " + error.message, true);
+    } else {
+      showStatus("Modifications enregistrées avec succès !");
+      updateSnippet(currentSiteId);
+    }
+  });
+
+  // Déconnexion
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = "/login.html";
+  });
+</script>

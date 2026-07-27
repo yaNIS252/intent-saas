@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion / Inscription — Intent SaaS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
+    <h1 class="text-2xl font-bold text-center mb-2">Intent Data B2B</h1>
+    <p class="text-gray-400 text-sm text-center mb-6">Connectez-vous pour gérer vos alertes Slack</p>
+
+    <!-- Zone de message d'alerte -->
+    <div id="alertMessage" class="hidden p-3 mb-4 text-sm rounded-lg"></div>
+
+    <form id="authForm" onsubmit="return false;" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Adresse E-mail</label>
+        <input type="email" id="email" required placeholder="nom@entreprise.com"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Mot de passe (6 car. min)</label>
+        <input type="password" id="password" required placeholder="••••••••"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 text-white">
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="btnLogin" class="w-1/2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+          Se connecter
+        </button>
+        <button type="button" id="btnSignUp" class="w-1/2 py-2 px-4 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium rounded-lg transition border border-gray-600">
+          S'inscrire
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ⚠️ REMPLACE PAR TES VRAIES CLÉS SUPABASE
+    const SUPABASE_URL = "https://vudtgpdsufkqpssgnqdr.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZHRncGRzdWZrcXBzc2ducWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNzYzODcsImV4cCI6MjEwMDY1MjM4N30.1Mdv6fx3JNZHoiXzgc4jH80_yxWwUkvW86k7xT9Ace0";
+
+    // Initialisation unique
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const alertMessage = document.getElementById('alertMessage');
+
+    function showAlert(text, isError = true) {
+      alertMessage.textContent = text;
+      alertMessage.className = `p-3 mb-4 text-sm rounded-lg ${isError ? 'bg-red-900/50 text-red-300 border border-red-800' : 'bg-green-900/50 text-green-300 border border-green-800'}`;
+      alertMessage.classList.remove('hidden');
+    }
+
+    // Connexion
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return showAlert("Remplis tous les champs.");
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          showAlert("Erreur : " + error.message);
+        } else {
+          showAlert("Connexion réussie ! Redirection...", false);
+          setTimeout(() => { window.location.href = "/dashboard.html"; }, 1000);
+        }
+      } catch (err) {
+        showAlert("Erreur : " + err.message);
+      }
+    });
+
+      // Inscription via le backend (bypass de la limite SMTP)
+    document.getElementById('btnSignUp').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return showAlert("Remplis tous les champs.");
+      if (password.length < 6) return showAlert("Le mot de passe doit faire au moins 6 caractères.");
+
+      try {
+        // 1. Inscription via notre serveur Node.js
+        const response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          showAlert("Erreur : " + result.error);
+          return;
+        }
+
+        // 2. Connexion automatique dans la foulée
+        const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (loginError) {
+          showAlert("Compte créé ! Veuillez vous connecter.");
+        } else {
+          showAlert("Compte créé avec succès ! Redirection...", false);
+          setTimeout(() => { window.location.href = "/dashboard.html"; }, 1000);
+        }
+
+      } catch (err) {
+        showAlert("Erreur réseau : " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

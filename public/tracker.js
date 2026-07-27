@@ -12,12 +12,18 @@
       return;
     }
 
+    // 1. Récupération de la balise script et extraction du site_id
+    var script = document.currentScript 
+      || document.querySelector('script[data-site-id]') 
+      || document.querySelector('script[src*="tracker.js"]');
+    
+    var siteId = script ? script.getAttribute('data-site-id') : null;
+
     // VERROU : On marque l'URL comme "en cours" AVANT le fetch
     pendingUrls.add(currentUrl);
 
-    // Détection automatique du domaine de l'API Render
+    // 2. Détection automatique du domaine de l'API (Localhost ou Render)
     var ENDPOINT = (function () {
-      var script = document.currentScript || document.querySelector('script[src*="tracking.js"]');
       if (script && script.src) {
         try {
           var origin = new URL(script.src).origin;
@@ -29,9 +35,11 @@
       return '/api/track';
     })();
 
+    // 3. Construction du payload AVEC le siteId
     var payload = {
       url: currentUrl,
-      referrer: document.referrer || null
+      referrer: document.referrer || null,
+      siteId: siteId
     };
 
     fetch(ENDPOINT, {

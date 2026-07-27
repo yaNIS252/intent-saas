@@ -9,15 +9,29 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. Initialisation du client Supabase
+// 1. Initialisation des clients Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_KEY; // Anon Key
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Service Role Key (Admin)
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('[intent-saas] Erreur : SUPABASE_URL ou SUPABASE_KEY manquant dans le .env');
 }
 
+if (!supabaseServiceKey) {
+  console.warn('[intent-saas] Attention : SUPABASE_SERVICE_ROLE_KEY manquante. L\'auto-confirmation d\'inscription échouera.');
+}
+
+// Client public / standard
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Client Admin (Privilèges élevés pour bypass la confirmation email)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 // Patterns Regex pour filtrer les FAI résidentiels
 const ISP_PATTERNS = [
@@ -166,7 +180,49 @@ async function sendSlackAlert({ company, location, page, referrer, timestamp, cl
   );
 }
 
-// ROUTE PRINCIPALE
+// -----------------------------------------------------------------------------
+// ROUTES D'AUTHENTIFICATION
+// -----------------------------------------------------------------------------
+
+/**
+ * Inscription auto-confirmée (Bypass des quotas SMTP Supabase)
+ */
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'E-mail et mot de passe requis.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Le mot de passe doit faire au moins 6 caractères.' });
+    }
+
+    // Création directe de l'utilisateur avec email_confirm = true
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (error) {
+      console.error('[intent-saas] Erreur de création utilisateur:', error.message);
+      return res.status(400).json({ success: false, error: error.message });
+    }
+
+    console.log(`[intent-saas] Utilisateur créé et auto-confirmé : ${email}`);
+    return res.json({ success: true, user: data.user });
+
+  } catch (err) {
+    console.error('[intent-saas] /api/signup error:', err.message);
+    return res.status(500).json({ success: false, error: 'Erreur interne du serveur.' });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// ROUTE PRINCIPALE DE TRACKING
+// -----------------------------------------------------------------------------
 app.post('/api/track', async (req, res) => {
   try {
     const { url, referrer, siteId } = req.body || {};
