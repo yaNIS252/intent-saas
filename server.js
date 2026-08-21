@@ -334,7 +334,6 @@ app.post('/api/client/config', requireAuth, express.json(), async (req, res) => 
  */
 app.get('/api/leads', requireAuth, async (req, res) => {
   try {
-    // Find client for this user
     const { data: client, error: clientError } = await supabase
       .from('clients')
       .select('id, site_id')
@@ -372,14 +371,14 @@ app.get('/api/leads', requireAuth, async (req, res) => {
 // -----------------------------------------------------------------------------
 app.post('/api/track', trackingRateLimiter, async (req, res) => {
   try {
-    const { url, referrer, siteId } = req.body || {};
+    const { url, referrer, siteId, site_id } = req.body || {};
 
     if (!url) {
       return res.status(400).json({ success: false, error: 'Missing url' });
     }
 
-    // 1. Récupération du site_id
-    const targetSiteId = siteId || 'cli_test_123';
+    // 1. Récupération du site_id (Gère siteId ou site_id)
+    const targetSiteId = siteId || site_id || 'cli_test_123';
 
     // 2. Requête Supabase pour récupérer le profil du client
     const { data: client, error: dbError } = await supabase
@@ -399,11 +398,11 @@ app.post('/api/track', trackingRateLimiter, async (req, res) => {
       return res.json({ success: true, skipped: 'non_strategic_page' });
     }
 
-    // 4. Détection de l'IP (Dynamique : '8.8.8.8' en dev local, vraie IP en prod)
-    const isDev = process.env.NODE_ENV !== 'production';
-    const ip = isDev ? '8.8.8.8' : extractClientIp(req);
+    // 4. Détection de l'IP (Force '8.8.8.8' (Google) ou prend l'entête 'x-test-ip' pour valider le test blanc en prod)
+    // NOTE: Remplace par extractClientIp(req) une fois tous les tests validés avant le lancement officiel.
+    const ip = req.headers['x-test-ip'] || '8.8.8.8';
 
-    console.log(`[intent-saas] IP détectée (${isDev ? 'DEV' : 'PROD'}) : ${ip}`);
+    console.log(`[intent-saas] IP analysée : ${ip}`);
 
     if (isPrivateIp(ip)) {
       console.log(`[intent-saas] Private/local IP skipped: ${ip}`);

@@ -98,18 +98,6 @@
       box-shadow: 0 24px 48px rgba(99, 102, 241, 0.15);
     }
 
-    .nav-link {
-      transition: color 0.2s ease;
-    }
-
-    .nav-link:hover {
-      color: #fff;
-    }
-
-    .check-icon {
-      flex-shrink: 0;
-    }
-
     .hero-glow {
       position: absolute;
       width: 600px;
@@ -138,9 +126,10 @@
       </a>
 
       <div class="flex items-center gap-3">
-        <button onclick="openBookingModal()" class="btn-ghost inline-flex text-sm font-medium text-slate-300 border border-white/10 px-3.5 py-2 rounded-lg hover:border-white/20">
+        <!-- LIEN CALENDLY HEADER -->
+        <a href="https://calendly.com/TON_LIEN_CALENDLY" target="_blank" rel="noopener noreferrer" class="btn-ghost inline-flex text-sm font-medium text-slate-300 border border-white/10 px-3.5 py-2 rounded-lg hover:border-white/20">
           📅 Prendre rendez-vous
-        </button>
+        </a>
         <a id="navAuthBtn" href="/login.html?mode=login" class="btn-primary inline-flex text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500">
           Déjà client ?
         </a>
@@ -175,12 +164,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
           </svg>
         </a>
-        <button onclick="openBookingModal()" class="btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-base">
+        <!-- LIEN CALENDLY HERO -->
+        <a href="https://calendly.com/TON_LIEN_CALENDLY" target="_blank" rel="noopener noreferrer" class="btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-white/10 text-slate-300 font-medium text-base">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
           Prendre rendez-vous
-        </button>
+        </a>
       </div>
 
       <p class="animate-fade-up mt-6 text-sm text-slate-500" style="animation-delay: 0.4s;">
@@ -306,9 +296,10 @@
           <a href="/login.html?mode=signup" class="btn-primary block w-full text-center px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25 mb-3">
             Démarrer l'essai gratuit
           </a>
-          <button onclick="openBookingModal()" class="btn-ghost block w-full text-center px-6 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-medium hover:text-white">
+          <!-- LIEN CALENDLY TARIFS -->
+          <a href="https://calendly.com/TON_LIEN_CALENDLY" target="_blank" rel="noopener noreferrer" class="btn-ghost block w-full text-center px-6 py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-medium hover:text-white">
             Demander une démo
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -324,9 +315,10 @@
           <a href="/login.html?mode=signup" class="btn-primary inline-flex px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">
             S'inscrire maintenant
           </a>
-          <button onclick="openBookingModal()" class="btn-ghost inline-flex px-8 py-3 rounded-xl border border-white/10 text-slate-300 font-medium">
+          <!-- LIEN CALENDLY CTA BOTTOM -->
+          <a href="https://calendly.com/yanisleport/instent" target="_blank" rel="noopener noreferrer" class="btn-ghost inline-flex px-8 py-3 rounded-xl border border-white/10 text-slate-300 font-medium">
             Prendre rendez-vous
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -347,35 +339,6 @@
     </div>
   </footer>
 
-  <!-- MODALE PRENDRE RENDEZ-VOUS -->
-  <div id="bookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
-      <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-        ✕
-      </button>
-      <h3 class="text-xl font-bold text-white mb-2">Réserver une démonstration</h3>
-      <p class="text-sm text-gray-400 mb-6">Choisissez un créneau avec notre équipe pour configurer IntentPulse en direct.</p>
-      
-      <form onsubmit="handleBookingSubmit(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Votre Nom & Prénom</label>
-          <input type="text" required placeholder="Alex Martin" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Email professionnel</label>
-          <input type="email" required placeholder="alex@entreprise.com" class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Date souhaitée</label>
-          <input type="date" required class="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-indigo-500 focus:outline-none">
-        </div>
-        <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition text-sm">
-          Confirmer le rendez-vous
-        </button>
-      </form>
-    </div>
-  </div>
-
   <script>
     const SUPABASE_URL = "https://vudtgpdsufkqpssgnqdr.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1ZHRncGRzdWZrcXBzc2ducWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNzYzODcsImV4cCI6MjEwMDY1MjM4N30.1Mdv6fx3JNZHoiXzgc4jH80_yxWwUkvW86k7xT9Ace0";
@@ -393,18 +356,6 @@
       }
     }
     checkSession();
-
-    function openBookingModal() {
-      document.getElementById('bookingModal').classList.remove('hidden');
-    }
-    function closeBookingModal() {
-      document.getElementById('bookingModal').classList.add('hidden');
-    }
-    function handleBookingSubmit(e) {
-      e.preventDefault();
-      alert("Demande enregistrée ! Un conseiller vous contactera dans les plus brefs délais.");
-      closeBookingModal();
-    }
   </script>
 </body>
 </html>
