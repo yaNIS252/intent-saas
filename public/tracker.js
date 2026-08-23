@@ -13,13 +13,17 @@
     }
 
     // 1. Récupération de la balise script et extraction du site_id
-    var script = document.currentScript 
-      || document.querySelector('script[data-site-id]') 
+    var script = document.currentScript
+      || document.querySelector('script[data-site-id]')
       || document.querySelector('script[src*="tracker.js"]');
-    
+
     var siteId = script ? script.getAttribute('data-site-id') : null;
 
     // VERROU : On marque l'URL comme "en cours" AVANT le fetch
+    if (!siteId) {
+      // Aucun siteId défini → on abandonne le suivi
+      return;
+    }
     pendingUrls.add(currentUrl);
 
     // 2. Détection automatique du domaine de l'API (Localhost ou Render)
@@ -42,13 +46,22 @@
       siteId: siteId
     };
 
+    // Envoi avec timeout et gestion d'erreurs explicite
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 5000); // 5 s
+
     fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      keepalive: true
+      keepalive: true,
+      signal: controller.signal
     })
     .then(function(response) {
+      if (!response.ok) {
+        // Réponse HTTP non‑2xx → on considère comme échec
+        throw new Error('HTTP ' + response.status);
+      }
       return response.json();
     })
     .then(function(data) {
@@ -57,10 +70,14 @@
         trackedUrls.add(currentUrl);
       }
     })
-    .catch(function () {
-      /* silent fail */
+    .catch(function(err) {
+      // En dev, on loggue l’erreur ; en prod on peut ignorer ou envoyer à un endpoint de logging
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[tracker] Erreur de suivi :', err);
+      }
     })
     .finally(function() {
+      clearTimeout(timeoutId);
       // Déverrouillage de la requête en cours
       pendingUrls.delete(currentUrl);
     });
